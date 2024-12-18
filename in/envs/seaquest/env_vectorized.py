@@ -4,7 +4,7 @@ from blendrl.env_vectorized import VectorizedNudgeBaseEnv
 from ocatari.core import OCAtari
 import numpy as np
 import torch as th
-from ocatari.ram.seaquest import MAX_ESSENTIAL_OBJECTS
+from ocatari.ram.seaquest import MAX_NB_OBJECTS
 import gymnasium
 import gymnasium as gym
 from stable_baselines3.common.env_util import make_atari_env
@@ -61,36 +61,38 @@ class VectorizedNudgeEnv(VectorizedNudgeBaseEnv):
         # set up multiple envs
         self.n_envs = n_envs
         self.envs = [
-            HackAtari(
-                env_name="ALE/Seaquest-v5",
-                mode="ram",
-                obs_mode="ori",
-                modifs=[("disable_coconut"), ("random_init"), ("change_level0")],
-                rewardfunc_path="in/envs/seaquest/blenderl_reward.py",
-                render_mode=render_mode,
-                render_oc_overlay=render_oc_overlay,
-            )
+            # HackAtari(
+            #     env_name="ALE/Seaquest-v5",
+            #     mode="ram",
+            #     obs_mode="dqn",
+            #     modifs=[("disable_coconut"), ("random_init"), ("change_level0")],
+            #     rewardfunc_path="in/envs/seaquest/blenderl_reward.py",
+            #     render_mode=render_mode,
+            #     render_oc_overlay=render_oc_overlay,
+            # )
+            OCAtari(env_name="ALE/Seaquest-v5", mode="ram", obs_mode="dqn",
+                    render_mode=render_mode, render_oc_overlay=render_oc_overlay)
             for i in range(n_envs)
         ]
         # apply wrapper to _env in OCAtari
-        for i in range(n_envs):
-            self.envs[i]._env = make_env(self.envs[i]._env)
+        # for i in range(n_envs):
+        #     self.envs[i]._env = make_env(self.envs[i]._env)
 
         # for learning script from cleanrl
         # self.env._env = make_env(self.env._env)
         self.n_actions = 6
         self.n_raw_actions = 18
-        self.n_objects = 43
+        self.n_objects = 42
         self.n_features = 4  # visible, x-pos, y-pos, right-facing
         self.seed = seed
 
         # Compute index offsets. Needed to deal with multiple same-category objects
         self.obj_offsets = {}
         offset = 0
-        for obj, max_count in MAX_ESSENTIAL_OBJECTS.items():
+        for obj, max_count in MAX_NB_OBJECTS.items():
             self.obj_offsets[obj] = offset
             offset += max_count
-        self.relevant_objects = set(MAX_ESSENTIAL_OBJECTS.keys())
+        self.relevant_objects = set(MAX_NB_OBJECTS.keys())
 
     def reset(self):
         logic_states = []
@@ -154,20 +156,29 @@ class VectorizedNudgeEnv(VectorizedNudgeBaseEnv):
     def extract_logic_state(self, input_state):
         state = th.zeros((self.n_objects, self.n_features), dtype=th.int32)
 
-        obj_count = {k: 0 for k in MAX_ESSENTIAL_OBJECTS.keys()}
+        obj_count = {k: 0 for k in MAX_NB_OBJECTS.keys()}
 
-        for obj in input_state:
-            if obj.category not in self.relevant_objects:
+        # for obj in input_state:
+        #     if obj.category not in self.relevant_objects:
+        #         continue
+        #     idx = self.obj_offsets[obj.category] + obj_count[obj.category]
+        #     if obj.category == "OxygenBar":
+        #         state[idx] = th.Tensor([1, obj.value, 0, 0])
+        #     else:
+        #         orientation = (
+        #             obj.orientation.value if obj.orientation is not None else 0
+        #         )
+        #         state[idx] = th.tensor([1, *obj.center, orientation])
+        #     obj_count[obj.category] += 1
+
+        for idx, obj in enumerate(input_state):
+            if obj.category == "NoObject":
                 continue
-            idx = self.obj_offsets[obj.category] + obj_count[obj.category]
             if obj.category == "OxygenBar":
                 state[idx] = th.Tensor([1, obj.value, 0, 0])
             else:
-                orientation = (
-                    obj.orientation.value if obj.orientation is not None else 0
-                )
+                orientation = obj.orientation.value if obj.orientation is not None else 0
                 state[idx] = th.tensor([1, *obj.center, orientation])
-            obj_count[obj.category] += 1
         return state
 
     def extract_neural_state(self, raw_input_state):

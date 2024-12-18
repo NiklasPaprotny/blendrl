@@ -1,10 +1,12 @@
 from typing import Sequence
 import torch
+from ocatari import OCAtari
+
 from nudge.env import NudgeBaseEnv
 from hackatari.core import HackAtari
 import numpy as np
 import torch as th
-from ocatari.ram.seaquest import MAX_ESSENTIAL_OBJECTS
+from ocatari.ram.seaquest import MAX_NB_OBJECTS
 import gymnasium as gym
 
 
@@ -53,27 +55,27 @@ class NudgeEnv(NudgeBaseEnv):
 
     def __init__(self, mode: str, render_mode="rgb_array", render_oc_overlay=False, seed=None):
         super().__init__(mode)
-        # self.env = OCAtari(env_name="Seaquest-v4", mode="ram", obs_mode="ori",
-        #                    render_mode=render_mode, render_oc_overlay=render_oc_overlay)
-        self.env = HackAtari(env_name="ALE/Seaquest-v5", mode="ram", 
-                            #  modifs=[("disable_enemies")],
-                            rewardfunc_path="in/envs/seaquest/blenderl_reward.py",
-                            render_mode=render_mode, render_oc_overlay=render_oc_overlay)
+        self.env = OCAtari(env_name="ALE/Seaquest-v5", mode="ram", obs_mode="dqn",
+                           render_mode=render_mode, render_oc_overlay=render_oc_overlay)
+        # self.env = HackAtari(env_name="ALE/Seaquest-v5", mode="ram", obs_mode='dqn',
+        #                     #  modifs=[("disable_enemies")],
+        #                     rewardfunc_path="in/envs/seaquest/blenderl_reward.py",
+        #                     render_mode=render_mode, render_oc_overlay=render_oc_overlay)
         # for learning script from cleanrl
-        self.env._env = make_env(self.env._env)
+        # self.env.env = make_env(self.env.env)
         self.n_actions = 6
         self.n_raw_actions = 18
-        self.n_objects = 43
+        self.n_objects = 42
         self.n_features = 4  # visible, x-pos, y-pos, right-facing
         self.seed = seed
 
         # Compute index offsets. Needed to deal with multiple same-category objects
         self.obj_offsets = {}
         offset = 0
-        for (obj, max_count) in MAX_ESSENTIAL_OBJECTS.items():
+        for (obj, max_count) in MAX_NB_OBJECTS.items():
             self.obj_offsets[obj] = offset
             offset += max_count
-        self.relevant_objects = set(MAX_ESSENTIAL_OBJECTS.keys())
+        self.relevant_objects = set(MAX_NB_OBJECTS.keys())
 
     def reset(self):
         obs, _ = self.env.reset(seed=self.seed)
@@ -121,18 +123,28 @@ class NudgeEnv(NudgeBaseEnv):
         state = th.zeros((self.n_objects, self.n_features), dtype=th.int32)
         self.bboxes = th.zeros((self.n_objects, 4), dtype=th.int32)
 
-        obj_count = {k: 0 for k in MAX_ESSENTIAL_OBJECTS.keys()}
+        obj_count = {k: 0 for k in MAX_NB_OBJECTS.keys()}
 
-        for obj in input_state:
-            if obj.category not in self.relevant_objects:
+        # for obj in input_state:
+        #     if obj.category not in self.relevant_objects:
+        #         continue
+        #     idx = self.obj_offsets[obj.category] + obj_count[obj.category]
+        #     if obj.category == "OxygenBar":
+        #         state[idx] = th.Tensor([1, obj.value, 0, 0])
+        #     else:
+        #         orientation = obj.orientation.value if obj.orientation is not None else 0
+        #         state[idx] = th.tensor([1, *obj.center, orientation])
+        #     obj_count[obj.category] += 1
+        #     self.bboxes[idx] = th.tensor(obj.xywh)
+
+        for idx, obj in enumerate(input_state):
+            if obj.category == "NoObject":
                 continue
-            idx = self.obj_offsets[obj.category] + obj_count[obj.category]
             if obj.category == "OxygenBar":
                 state[idx] = th.Tensor([1, obj.value, 0, 0])
             else:
                 orientation = obj.orientation.value if obj.orientation is not None else 0
                 state[idx] = th.tensor([1, *obj.center, orientation])
-            obj_count[obj.category] += 1
             self.bboxes[idx] = th.tensor(obj.xywh)
 
         return state

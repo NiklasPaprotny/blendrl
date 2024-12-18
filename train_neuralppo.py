@@ -10,10 +10,10 @@ import torch.nn as nn
 import torch.optim as optim
 import tyro
 from torch.utils.tensorboard import SummaryWriter
-
+from tqdm import tqdm
 
 # added
-from agents.blender_agent import NsfrActorCritic
+# from agents.blender_agent import NsfrActorCritic
 from cleanrl.cleanrl.ppo_atari import AgentListEnvs
 from blendrl.env_vectorized import VectorizedNudgeBaseEnv
 from nudge.utils import save_hyperparams
@@ -244,7 +244,7 @@ def main():
     #     image = wandb.Image(next_obs_array[0][0], caption=f"State at global_step={global_step}_{i}")
         # wandb.log({"state_image": image})
     
-    for iteration in range(1, args.num_iterations + 1):
+    for iteration in tqdm(range(1, args.num_iterations + 1)):
         # Annealing the rate if instructed to do so.
         if args.anneal_lr:
             frac = 1.0 - (iteration - 1.0) / args.num_iterations

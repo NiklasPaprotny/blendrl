@@ -1,6 +1,6 @@
 import tyro
-from nudge.evaluator import Evaluator
-from nudge.evaluator_neuralppo import EvaluatorNeuralPPO
+from blendrl.evaluator import Evaluator
+from blendrl.evaluator_neuralppo import EvaluatorNeuralPPO
 
 from dataclasses import dataclass
 import tyro
@@ -18,7 +18,7 @@ import tyro
 
 def main(
     env_name: str = "seaquest",
-    agent_path: str = "out/runs/kangaroo_softmax_lr_0.00025_llr_0.00025_blr_0.00025_gamma_0.99_bentcoef_0.0_numenvs_60_steps_128_pretrained_False_joint_True_20",
+    agent_path: str = "out/runs/seaquest_softmax_blender_logic_lr_0.00025_llr_0.00025_blr_0.00025_gamma_0.99_bentcoef_0.01_numenvs_5_steps_128_pretrained_False_joint_True_0",
     fps: int = 5,
     episodes: int = 2,
     model: str = 'blendrl',

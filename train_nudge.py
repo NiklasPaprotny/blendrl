@@ -10,10 +10,10 @@ import torch.nn as nn
 import torch.optim as optim
 import tyro
 from torch.utils.tensorboard import SummaryWriter
-
+from tqdm import tqdm
 
 # added
-from agents.blender_agent import NsfrActorCritic
+from nudge.agents.logic_agent import NsfrActorCritic
 from blendrl.env_vectorized import VectorizedNudgeBaseEnv
 from nudge.utils import save_hyperparams
 import os
@@ -57,7 +57,7 @@ class Args:
     # Algorithm specific arguments
     env_id: str = "Seaquest-v4"
     """the id of the environment"""
-    total_timesteps: int = 60000000
+    total_timesteps: int = 6000
     """total timesteps of the experiments"""
     num_envs: int = 20
     """the number of parallel game environments"""
@@ -109,7 +109,7 @@ class Args:
     """the mode for the agent"""
     rules: str = "default"
     """the ruleset used in the agent"""
-    save_steps: int = 5000000
+    save_steps: int = 5000
     """the number of steps to save models"""
     pretrained: bool = False
     """to use pretrained neural agent"""
@@ -245,7 +245,7 @@ def main():
     #     image = wandb.Image(next_obs_array[0][0], caption=f"State at global_step={global_step}_{i}")
         # wandb.log({"state_image": image})
     
-    for iteration in range(1, args.num_iterations + 1):
+    for iteration in tqdm(range(1, args.num_iterations + 1)):
         # Annealing the rate if instructed to do so.
         if args.anneal_lr:
             frac = 1.0 - (iteration - 1.0) / args.num_iterations
