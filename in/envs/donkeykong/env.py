@@ -1,11 +1,12 @@
 from typing import Sequence
 import torch
 from nudge.env import NudgeBaseEnv
-from hackatari.core import HackAtari
+from ocatari.core import OCAtari
 import numpy as np
 import torch as th
-from ocatari.ram.donkeykong import MAX_ESSENTIAL_OBJECTS
+from ocatari.ram.donkeykong import MAX_NB_OBJECTS
 import gymnasium as gym
+from dqn_wrapper import DQNWrapper
 
 
     
@@ -21,14 +22,15 @@ def make_env(env):
     env = gym.wrappers.RecordEpisodeStatistics(env)
     env = gym.wrappers.AutoResetWrapper(env)
     env = NoopResetEnv(env, noop_max=30)
+    env = DQNWrapper(env, obs_mode="dqn")  # Apply the DQNWrapper before MaxAndSkipEnv, otherwise MaxAndSkipEnv will utilize obs with the wrong format (210,160,3) instead of (84,84) in its step() method, causing a mismatch of shapes.
     env = MaxAndSkipEnv(env, skip=4)
     env = EpisodicLifeEnv(env)
     if "FIRE" in env.unwrapped.get_action_meanings():
         env = FireResetEnv(env)
     # env = ClipRewardEnv(env)
-    env = gym.wrappers.ResizeObservation(env, (84, 84))
-    env = gym.wrappers.GrayScaleObservation(env)
-    env = gym.wrappers.FrameStack(env, 4)
+    # env = gym.wrappers.ResizeObservation(env, (84, 84))
+    # env = gym.wrappers.GrayScaleObservation(env)
+    # env = gym.wrappers.FrameStack(env, 4)
     return env
 
 
@@ -66,10 +68,17 @@ class NudgeEnv(NudgeBaseEnv):
             seed (int): Seed for the environment.
         """
         super().__init__(mode)
-        self.env = HackAtari(env_name="ALE/DonkeyKong-v5", mode="ram", obs_mode="ori",\
-            modifs=[("no_barrel"), ("change_level0")],\
-            rewardfunc_path="in/envs/donkeykong/blenderl_reward.py",\
-            render_mode=render_mode, render_oc_overlay=render_oc_overlay)
+        self.env = OCAtari(
+            env_name="ALE/DonkeyKong-v5",
+            mode="ram",
+            obs_mode="dqn",
+            render_mode=render_mode,
+            render_oc_overlay=render_oc_overlay
+        )
+        # self.env = HackAtari(env_name="ALE/DonkeyKong-v5", mode="ram", obs_mode="ori",\
+        #     modifs=[("no_barrel"), ("change_level0")],\
+        #     rewardfunc_path="in/envs/donkeykong/blenderl_reward.py",\
+        #     render_mode=render_mode, render_oc_overlay=render_oc_overlay)
         
         
         # apply wrapper to _env
@@ -83,10 +92,10 @@ class NudgeEnv(NudgeBaseEnv):
         # Compute index offsets. Needed to deal with multiple same-category objects
         self.obj_offsets = {}
         offset = 0
-        for (obj, max_count) in MAX_ESSENTIAL_OBJECTS.items():
+        for (obj, max_count) in MAX_NB_OBJECTS.items():
             self.obj_offsets[obj] = offset
             offset += max_count
-        self.relevant_objects = set(MAX_ESSENTIAL_OBJECTS.keys())
+        self.relevant_objects = set(MAX_NB_OBJECTS.keys())
 
     def reset(self):
         """
@@ -135,7 +144,7 @@ class NudgeEnv(NudgeBaseEnv):
         """
         state = th.zeros((self.n_objects, self.n_features), dtype=th.int32)
 
-        obj_count = {k: 0 for k in MAX_ESSENTIAL_OBJECTS.keys()}
+        obj_count = {k: 0 for k in MAX_NB_OBJECTS.keys()}
         self.bboxes = th.zeros((self.n_objects, 4), dtype=th.int32)
 
         for obj in input_state:

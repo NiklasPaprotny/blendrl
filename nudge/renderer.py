@@ -90,7 +90,8 @@ class Renderer:
         ret = 0
 
         obs, obs_nn = self.env.reset()
-        obs_nn = th.tensor(obs_nn, device=self.model.device) 
+        obs_nn = obs_nn.clone().detach().to(self.model.device)
+        # obs_nn = th.tensor(obs_nn, device=self.model.device) # [DEPRECATED]
         # print(obs_nn.shape)
 
         while self.running:
@@ -110,9 +111,9 @@ class Renderer:
 
                 (new_obs, new_obs_nn), reward, done, terminations, infos = self.env.step(action, is_mapped=self.takeover)
                 # if reward > 0:
-                    # print(f"Reward: {reward:.2f}")
-                new_obs_nn = th.tensor(new_obs_nn, device=self.model.device) 
-                
+                # print(f"Reward: {reward:.2f}")
+                new_obs_nn = new_obs_nn.clone().detach().to(self.model.device)
+                # new_obs_nn = th.tensor(new_obs_nn, device=self.model.device) # [DEPRECATED]
 
                 self._render()
 
