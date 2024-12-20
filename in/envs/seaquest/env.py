@@ -8,6 +8,7 @@ import numpy as np
 import torch as th
 from ocatari.ram.seaquest import MAX_NB_OBJECTS
 import gymnasium as gym
+from dqn_wrapper import DQNWrapper
 
 
 
@@ -28,14 +29,15 @@ def make_env(env):
             # env = gym.make(env_id)
     env = gym.wrappers.RecordEpisodeStatistics(env)
     env = NoopResetEnv(env, noop_max=30)
+    env = DQNWrapper(env, obs_mode="dqn")  # Apply the DQNWrapper before MaxAndSkipEnv, otherwise MaxAndSkipEnv will utilize obs with the wrong format (210,160,3) instead of (84,84) in its step() method, causing a mismatch of shapes.
     env = MaxAndSkipEnv(env, skip=4)
     env = EpisodicLifeEnv(env)
     if "FIRE" in env.unwrapped.get_action_meanings():
         env = FireResetEnv(env)
     env = ClipRewardEnv(env)
-    env = gym.wrappers.ResizeObservation(env, (84, 84))
-    env = gym.wrappers.GrayScaleObservation(env)
-    env = gym.wrappers.FrameStack(env, 4)
+    # env = gym.wrappers.ResizeObservation(env, (84, 84))
+    # # env = gym.wrappers.GrayScaleObservation(env)
+    # env = gym.wrappers.FrameStack(env, 4)
     env = gym.wrappers.AutoResetWrapper(env)
     return env
 
@@ -62,7 +64,7 @@ class NudgeEnv(NudgeBaseEnv):
         #                     rewardfunc_path="in/envs/seaquest/blenderl_reward.py",
         #                     render_mode=render_mode, render_oc_overlay=render_oc_overlay)
         # for learning script from cleanrl
-        # self.env.env = make_env(self.env.env)
+        self.env._env  = make_env(self.env._env )
         self.n_actions = 6
         self.n_raw_actions = 18
         self.n_objects = 42
