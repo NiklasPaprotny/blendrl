@@ -1,5 +1,6 @@
 from typing import Sequence
 import torch
+from dqn_wrapper import DQNWrapper
 from nudge.env import NudgeBaseEnv
 from ocatari.core import OCAtari
 from hackatari.core import HackAtari
@@ -27,13 +28,15 @@ def make_env(env):
     env = gym.wrappers.RecordEpisodeStatistics(env)
     env = gym.wrappers.AutoResetWrapper(env)
     env = NoopResetEnv(env, noop_max=30)
+    env = DQNWrapper(env, obs_mode="dqn") # Apply the DQNWrapper before MaxAndSkipEnv, otherwise MaxAndSkipEnv will utilize obs with the wrong format (210,160,3) instead of (84,84) in its step() method, causing a mismatch of shapes.
     env = MaxAndSkipEnv(env, skip=4)
     env = EpisodicLifeEnv(env)
     if "FIRE" in env.unwrapped.get_action_meanings():
         env = FireResetEnv(env)
     env = ClipRewardEnv(env)
-    env = gym.wrappers.ResizeObservation(env, (84, 84))
-    env = gym.wrappers.GrayScaleObservation(env)
+    #env = gym.wrappers.ResizeObservation(env, (84, 84))
+    #print("Observation space before GrayScale:", env.observation_space)
+    #env = gym.wrappers.GrayScaleObservation(env)
     env = gym.wrappers.FrameStack(env, 4)
     return env
 
@@ -90,6 +93,15 @@ class NudgeEnv(NudgeBaseEnv):
             seed (int): Seed for the environment.
         """
         super().__init__(mode)
+        self.env = OCAtari(
+            env_name="ALE/Kangaroo-v5",
+            mode="ram",
+            obs_mode="dqn",
+            render_mode=render_mode,
+            render_oc_overlay=render_oc_overlay
+        )
+        
+        '''
         self.env = HackAtari(
             env_name="ALE/Kangaroo-v5",
             mode="ram",
@@ -104,6 +116,8 @@ class NudgeEnv(NudgeBaseEnv):
             render_mode=render_mode,
             render_oc_overlay=render_oc_overlay,
         )
+        '''
+
 
         # self.env_ori = HackAtari(env_name="ALE/Kangaroo-v5", mode="ram", obs_mode="ori",\
         #     modifs=[("disable_coconut"), ("random_init")], #, ("change_level0")],\
