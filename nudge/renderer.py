@@ -305,6 +305,7 @@ class Renderer:
             text_rect.topleft = (self.env_render_shape[0] + 10, 25 + i * 35)
             self.window.blit(text, text_rect)
 
+
     def _render_selected_action(self):
         action_text = f"Raw selected action: {self.action_meanings[self.action]}"
         text = self.font.render(action_text, True, "white", None) # Display the raw selected action.
