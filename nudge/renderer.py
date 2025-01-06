@@ -90,7 +90,8 @@ class Renderer:
         ret = 0
 
         obs, obs_nn = self.env.reset()
-        obs_nn = th.tensor(obs_nn, device=self.model.device) 
+        obs_nn = obs_nn.clone().detach().to(self.model.device)
+        # obs_nn = th.tensor(obs_nn, device=self.model.device) # [DEPRECATED]
         # print(obs_nn.shape)
 
         while self.running:
@@ -119,7 +120,7 @@ class Renderer:
 
 
                 self.neural_state = new_obs_nn # Store neural state.
-                
+
 
                 self._render()
 
@@ -199,7 +200,6 @@ class Renderer:
         self._render_policy_probs()
         self._render_predicate_probs()
         self._render_neural_probs()
-        self._render_selected_action() # Display the selected action.
         self._render_env()
 
         pygame.display.flip()
@@ -304,13 +304,6 @@ class Renderer:
             text_rect = text.get_rect()
             text_rect.topleft = (self.env_render_shape[0] + 10, 25 + i * 35)
             self.window.blit(text, text_rect)
-
-    def _render_selected_action(self):
-        action_text = f"Raw selected action: {self.action_meanings[self.action]}"
-        text = self.font.render(action_text, True, "white", None) # Display the raw selected action.
-        text_rect = text.get_rect()
-        text_rect.topleft = (self.env_render_shape[0] + 10, 25 + 25 * 35)  # Place it at the bottom.
-        self.window.blit(text, text_rect)
 
             
     def _render_facts(self, th=0.1):
