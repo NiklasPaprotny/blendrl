@@ -105,13 +105,20 @@ class Renderer:
                     action = self._get_action()
                 else:  # AI plays the game
                     # print("obs_nn: ", obs_nn.shape)
-                    action, logprob = self.model.act(obs_nn, obs)  # update the model's internals
+                    action, logprob = self.model.act(obs_nn, obs) # update the model's internals
                     value = self.model.get_value(obs_nn, obs)
+
+
+                self.action = action # Store the selected action.
+
 
                 (new_obs, new_obs_nn), reward, done, terminations, infos = self.env.step(action, is_mapped=self.takeover)
                 # if reward > 0:
                     # print(f"Reward: {reward:.2f}")
                 new_obs_nn = th.tensor(new_obs_nn, device=self.model.device) 
+
+
+                self.neural_state = new_obs_nn # Store neural state.
                 
 
                 self._render()
@@ -192,6 +199,7 @@ class Renderer:
         self._render_policy_probs()
         self._render_predicate_probs()
         self._render_neural_probs()
+        self._render_selected_action() # Display the selected action.
         self._render_env()
 
         pygame.display.flip()
@@ -296,6 +304,13 @@ class Renderer:
             text_rect = text.get_rect()
             text_rect.topleft = (self.env_render_shape[0] + 10, 25 + i * 35)
             self.window.blit(text, text_rect)
+
+    def _render_selected_action(self):
+        action_text = f"Raw selected action: {self.action_meanings[self.action]}"
+        text = self.font.render(action_text, True, "white", None) # Display the raw selected action.
+        text_rect = text.get_rect()
+        text_rect.topleft = (self.env_render_shape[0] + 10, 25 + 25 * 35)  # Place it at the bottom.
+        self.window.blit(text, text_rect)
 
             
     def _render_facts(self, th=0.1):
