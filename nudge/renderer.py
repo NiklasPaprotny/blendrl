@@ -196,10 +196,11 @@ class Renderer:
 
     def _render(self):
         self.window.fill((20, 20, 20))  # clear the entire window
-        self._render_policy_probs()
-        self._render_predicate_probs()
-        self._render_neural_probs()
-        self._render_selected_action() # Display the selected action.
+        #self._render_policy_probs()
+        #self._render_predicate_probs()
+        #self._render_neural_probs()
+        #self._render_selected_action() # Display the selected action.
+        self._render_semantic_action()
         self._render_env()
 
         pygame.display.flip()
@@ -305,14 +306,6 @@ class Renderer:
             text_rect.topleft = (self.env_render_shape[0] + 10, 25 + i * 35)
             self.window.blit(text, text_rect)
 
-
-    def _render_selected_action(self):
-        action_text = f"Raw selected action: {self.action_meanings[self.action]}"
-        text = self.font.render(action_text, True, "white", None) # Display the raw selected action.
-        text_rect = text.get_rect()
-        text_rect.topleft = (self.env_render_shape[0] + 10, 25 + 25 * 35)  # Place it at the bottom.
-        self.window.blit(text, text_rect)
-
             
     def _render_facts(self, th=0.1):
         anchor = (self.env_render_shape[0] + 10, 25)
@@ -343,3 +336,98 @@ class Renderer:
             text_rect = text.get_rect()
             text_rect.topleft = (self.env_render_shape[0] + 10, 25 + i * 35)
             self.window.blit(text, text_rect)
+
+
+
+
+    def _render_selected_action(self):
+        '''
+        Render all possible actions and highlight only the raw selected action.
+        '''
+        #action_text = f"Raw selected action: {self.action_meanings[self.action]}"
+        #text = self.font.render(action_text, True, "white", None) # Display the raw selected action.
+        #text_rect = text.get_rect()
+        #text_rect.topleft = (self.env_render_shape[0] + 10, 25 + 25 * 35)  # Place it at the bottom.
+        #self.window.blit(text, text_rect)
+
+        anchor = (self.env_render_shape[0] + 10, 25)
+
+        action_names = ["noop", "fire", "up", "right", "left", "down", "upright", "upleft", "downright", "downleft", "upfire", "rightfire", "leftfire", "downfire", "uprightfire", "upleftfire", "downrightfire", "downleftfire"]
+
+        title = self.font.render("Raw Selected Action", True, "white", None)
+        title_rect = title.get_rect()
+        title_rect.topleft = (self.env_render_shape[0] + 10, 25)
+        self.window.blit(title, title_rect)
+
+        for i, action in enumerate(action_names):
+            is_selected = 0
+            if action.upper() == self.action_meanings[self.action]:
+                is_selected = 1 # Only the selected action will be highlighted.
+
+            color = is_selected * CELL_BACKGROUND_HIGHLIGHT + (1 - is_selected) * CELL_BACKGROUND_DEFAULT
+            i += 2
+            # Render cell background
+            pygame.draw.rect(self.window, color, [
+                anchor[0] - 2,
+                anchor[1] - 2 + i * 35,
+                (PREDICATE_PROBS_COL_WIDTH / 4  - 12) * is_selected,
+                28
+            ])
+
+            text = self.font.render(action, True, "white", None)
+            text_rect = text.get_rect()
+            text_rect.topleft = (self.env_render_shape[0] + 10, 25 + i * 35)
+            self.window.blit(text, text_rect)
+
+
+    def _parse_semantic_action(self, action):
+        '''
+        Return a list of actions that together make up the given action.
+        '''
+
+        action_names = ["NOOP", "FIRE", "UP", "RIGHT", "LEFT", "DOWN"]
+        selected_actions = []
+        for elem in action_names:
+            if elem in self.action_meanings[action]:
+                selected_actions.append(elem)
+
+        return selected_actions
+
+    def _render_semantic_action(self):
+        '''
+        Render only semantic actions and highlight the actions that make up the current selected action.
+        '''
+        anchor = (self.env_render_shape[0] + 10, 25)
+        semantic_actions = ["NOOP", "FIRE", "UP", "RIGHT", "LEFT", "DOWN"]
+        selected_actions = self._parse_semantic_action(self.action)
+
+        title = self.font.render("Semantic Actions", True, "white", None)
+        title_rect = title.get_rect()
+        title_rect.topleft = (self.env_render_shape[0] + 10, 25)
+        self.window.blit(title, title_rect)
+
+        for i, action in enumerate(semantic_actions):
+            is_selected = 0
+            if action in selected_actions:
+                is_selected = 1
+
+            color = is_selected * CELL_BACKGROUND_HIGHLIGHT + (1 - is_selected) * CELL_BACKGROUND_DEFAULT
+            i += 2
+            # Render cell background
+            pygame.draw.rect(self.window, color, [
+                anchor[0] - 2,
+                anchor[1] - 2 + i * 35,
+                (PREDICATE_PROBS_COL_WIDTH / 4  - 12) * is_selected,
+                28
+            ])
+
+            text = self.font.render(action, True, "white", None)
+            text_rect = text.get_rect()
+            text_rect.topleft = (self.env_render_shape[0] + 10, 25 + i * 35)
+            self.window.blit(text, text_rect)
+        
+        action_text = f"Action: {self.action_meanings[self.action]}"
+        text = self.font.render(action_text, True, "white", None) # Display the raw selected action.
+        text_rect = text.get_rect()
+        text_rect.topleft = (self.env_render_shape[0] + 10, 25 + 10 * 35)  # Place it at the bottom.
+        self.window.blit(text, text_rect)
