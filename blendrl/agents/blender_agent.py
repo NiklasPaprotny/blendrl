@@ -172,6 +172,7 @@ class BlenderActor(nn.Module):
         """
         # state size: B * N
         batch_size = neural_state.size(0)
+        
         logic_action_probs = self.to_action_distribution(self.logic_actor(logic_state))
         neural_action_probs = self.to_neural_action_distribution(neural_state)
         self.logic_action_probs = logic_action_probs
@@ -262,11 +263,13 @@ class BlenderActor(nn.Module):
             action_dist: action distribution
         """
         batch_size = raw_action_probs.size(0)
+
+        self.batch_size = batch_size # Necessary for _render_logic_rules() in renderer.py.
+
         env_action_names = list(self.env.pred2action.keys())        
         
         raw_action_probs = torch.cat([raw_action_probs, torch.zeros(batch_size, 1, device=self.device)], dim=1)
-        # save raw_action_probs for explanations (attributions)
-        self.raw_action_probs = raw_action_probs
+        self.raw_action_probs = raw_action_probs # save raw_action_probs for _render_logic_rules() in renderer.py
         raw_action_logits = torch.logit(raw_action_probs, eps=0.01)
         dist_values = []
         for i in range(len(env_action_names)):
@@ -390,6 +393,7 @@ class BlenderActorCritic(nn.Module):
             print_program(self.blender)
         print("==== Logic Policy ====")
         print_program(self.logic_actor)
+        
         
     def get_policy_weights(self):
         """
