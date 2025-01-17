@@ -19,7 +19,7 @@ from nsfr.utils.common import load_module
 from nsfr.common import get_nsfr_model
 from neumann.common import get_neumann_model
 
-from utils import get_blender, load_cleanrl_agent
+from ns_policies.blendrl.utils import get_blender, load_cleanrl_agent
 from nudge.utils import print_program
 
 from captum.attr import (
