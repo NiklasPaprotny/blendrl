@@ -362,7 +362,7 @@ class BlenderActorCritic(nn.Module):
         self.env = env
         self.rules = rules
         self.explain = explain
-        mlp_module_path = f"in/envs/{self.env.name}/mlp.py"
+        mlp_module_path = f"./ns_policies/blendrl/in/envs/{self.env.name}/mlp.py"
         module = load_module(mlp_module_path)
         self.visual_neural_actor = load_cleanrl_agent(pretrained=False, device=device)
         if reasoner == "neumann":

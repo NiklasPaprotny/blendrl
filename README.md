@@ -55,8 +55,12 @@ If you want to use NUDGE within other projects, you can install NUDGE locally as
     ```bash
     python setup.py develop
     ```
+3. Inside ```neumann/``` run
+    ```bash
+    python setup.py develop
+    ```
 
-### Ohter dependencies
+### Ohter dependencies (OLD)
 1. Install packages by `pip install -r requirements.txt` 
 
 2. PyG and torch-scatter for neumann
@@ -67,6 +71,17 @@ Install PyG and torch-scatter packages for neumann reasoner. See the [installati
     pip install pyg_lib torch_scatter torch_sparse -f https://data.pyg.org/whl/torch-1.12.0+cu116.html
     ```
 
+### Ohter dependencies (NEW)
+1. Install packages by `pip install -r requirements.txt` 
+
+2. Install other dependencies
+   ```
+   pip install torch==2.5.1 torchvision==0.13.0 -f https://download.pytorch.org/whl/torch_stable.html
+   pip install torch_geometric
+   pip install torch-scatter -f https://data.pyg.org/whl/torch-2.5.1+cpu.html
+   pip install vidmaker 
+   pip install "gymnasium[atari, accept-rom-license]"
+   ```
 
 ## How to Set up New Environments
 You add a new environment inside `in/envs/[new_env_name]/`. There, you need to define a `NudgeEnv` class that wraps the original environment in order to do
