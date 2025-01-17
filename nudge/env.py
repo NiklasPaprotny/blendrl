@@ -51,7 +51,7 @@ class NudgeBaseEnv(ABC):
 
     @staticmethod
     def from_name(name: str, **kwargs):
-        env_path = f"in/envs/{name}/env.py"
+        env_path = f"./ns_policies/blendrl/in/envs/{name}/env.py"
         env_module = load_module(env_path)
         return env_module.NudgeEnv(**kwargs)
 
