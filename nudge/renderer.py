@@ -213,7 +213,8 @@ class Renderer:
 
         #self._render_selected_action() # Render all actions and highlight the raw selected action.
         #self._render_semantic_action() # Render the list of semantic actions and highlight the actions that make up the selected action.
-        self._render_logic_rules() # Render the logic action rules and highlight the selected ones.
+        #self._render_logic_rules() # Render the logic action rules and highlight the selected ones.
+        self._render_logic_valuations
         self._render_env()
 
         pygame.display.flip()
@@ -564,7 +565,7 @@ class Renderer:
 
     def _render_logic_valuations(self):
         '''
-        Render logic state valuations by highlighting the top 3 logic action rules and showing the truth values of their state predicates.
+        Render logic state valuations by showcasing all logic action rules and their state atoms, but only showing the truth values of the selected rules.
         '''
         anchor = (self.env_render_shape[0] + 10, 25)
 
