@@ -11,6 +11,9 @@ from nudge.agents.neural_agent import ActorCritic
 from nudge.utils import load_model, yellow
 from nudge.env import NudgeBaseEnv
 
+
+from nudge.utils import get_program_nsfr
+
 SCREENSHOTS_BASE_PATH = "out/screenshots/"
 PREDICATE_PROBS_COL_WIDTH = 500 * 2
 FACT_PROBS_COL_WIDTH = 1000
@@ -85,6 +88,7 @@ class Renderer:
         self.clock = pygame.time.Clock()
         self.font = pygame.font.SysFont('Calibri', 24)
 
+
     def run(self):
         length = 0
         ret = 0
@@ -94,6 +98,7 @@ class Renderer:
         # print(obs_nn.shape)
 
         while self.running:
+            
             self.reset = False
             self._handle_user_input()
             if not self.paused:
@@ -119,9 +124,14 @@ class Renderer:
 
 
                 self.neural_state = new_obs_nn # Store neural state.
-                
+                self.logic_state = new_obs
+
+                #print("hi")
+                #print(self.model.actor.get_neural_explanation(new_obs_nn, action))
+                #print("hiho")
 
                 self._render()
+
 
                 if self.takeover and float(reward) != 0:
                     print(f"Reward {reward:.2f}")
@@ -196,10 +206,13 @@ class Renderer:
 
     def _render(self):
         self.window.fill((20, 20, 20))  # clear the entire window
-        self._render_policy_probs()
-        self._render_predicate_probs()
-        self._render_neural_probs()
-        self._render_selected_action() # Display the selected action.
+        #self._render_policy_probs()
+        #self._render_predicate_probs()
+        #self._render_neural_probs()
+
+        #self._render_selected_action() # Render all actions and highlight the raw selected action.
+        #self._render_semantic_action() # Render the list of semantic actions and highlight the actions that make up the selected action.
+        self._render_logic_rules() # Render the logic action rules and highlight the selected ones.
         self._render_env()
 
         pygame.display.flip()
@@ -305,14 +318,6 @@ class Renderer:
             text_rect.topleft = (self.env_render_shape[0] + 10, 25 + i * 35)
             self.window.blit(text, text_rect)
 
-
-    def _render_selected_action(self):
-        action_text = f"Raw selected action: {self.action_meanings[self.action]}"
-        text = self.font.render(action_text, True, "white", None) # Display the raw selected action.
-        text_rect = text.get_rect()
-        text_rect.topleft = (self.env_render_shape[0] + 10, 25 + 25 * 35)  # Place it at the bottom.
-        self.window.blit(text, text_rect)
-
             
     def _render_facts(self, th=0.1):
         anchor = (self.env_render_shape[0] + 10, 25)
@@ -340,6 +345,166 @@ class Renderer:
             ])
 
             text = self.font.render(str(f"{val:.3f} - {fact}"), True, "white", None)
+            text_rect = text.get_rect()
+            text_rect.topleft = (self.env_render_shape[0] + 10, 25 + i * 35)
+            self.window.blit(text, text_rect)
+
+
+
+
+    def _render_selected_action(self):
+        '''
+        Render all possible actions and highlight only the raw selected action.
+        '''
+        #action_text = f"Raw selected action: {self.action_meanings[self.action]}"
+        #text = self.font.render(action_text, True, "white", None) # Display the raw selected action.
+        #text_rect = text.get_rect()
+        #text_rect.topleft = (self.env_render_shape[0] + 10, 25 + 25 * 35)  # Place it at the bottom.
+        #self.window.blit(text, text_rect)
+
+        anchor = (self.env_render_shape[0] + 10, 25)
+
+        action_names = ["noop", "fire", "up", "right", "left", "down", "upright", "upleft", "downright", "downleft", "upfire", "rightfire", "leftfire", "downfire", "uprightfire", "upleftfire", "downrightfire", "downleftfire"]
+
+        title = self.font.render("Raw Selected Action", True, "white", None)
+        title_rect = title.get_rect()
+        title_rect.topleft = (self.env_render_shape[0] + 10, 25)
+        self.window.blit(title, title_rect)
+
+        for i, action in enumerate(action_names):
+            is_selected = 0
+            if action.upper() == self.action_meanings[self.action]:
+                is_selected = 1 # Only the selected action will be highlighted.
+
+            color = is_selected * CELL_BACKGROUND_HIGHLIGHT + (1 - is_selected) * CELL_BACKGROUND_DEFAULT
+            i += 2
+            # Render cell background
+            pygame.draw.rect(self.window, color, [
+                anchor[0] - 2,
+                anchor[1] - 2 + i * 35,
+                (PREDICATE_PROBS_COL_WIDTH / 4  - 12) * is_selected,
+                28
+            ])
+
+            text = self.font.render(action, True, "white", None)
+            text_rect = text.get_rect()
+            text_rect.topleft = (self.env_render_shape[0] + 10, 25 + i * 35)
+            self.window.blit(text, text_rect)
+
+
+    def _parse_semantic_action(self, action):
+        '''
+        Return a list of actions that together make up the given action.
+        '''
+
+        action_names = ["noop", "fire", "up", "right", "left", "down"]
+        selected_actions = []
+        for elem in action_names:
+            if elem in self.action_meanings[action].lower():
+                selected_actions.append(elem)
+
+        return selected_actions
+
+    def _render_semantic_action(self):
+        '''
+        Render only semantic actions and highlight the actions that make up the current selected action.
+        '''
+        anchor = (self.env_render_shape[0] + 10, 25)
+        semantic_actions = ["noop", "fire", "up", "right", "left", "down"]
+        selected_actions = self._parse_semantic_action(self.action)
+
+        title = self.font.render("Semantic Actions", True, "white", None)
+        title_rect = title.get_rect()
+        title_rect.topleft = (self.env_render_shape[0] + 10, 25)
+        self.window.blit(title, title_rect)
+
+        for i, action in enumerate(semantic_actions):
+            is_selected = 0
+            if action in selected_actions:
+                is_selected = 1
+
+            color = is_selected * CELL_BACKGROUND_HIGHLIGHT + (1 - is_selected) * CELL_BACKGROUND_DEFAULT
+            i += 2
+            # Render cell background
+            pygame.draw.rect(self.window, color, [
+                anchor[0] - 2,
+                anchor[1] - 2 + i * 35,
+                (PREDICATE_PROBS_COL_WIDTH / 4  - 12) * is_selected,
+                28
+            ])
+
+            text = self.font.render(action, True, "white", None)
+            text_rect = text.get_rect()
+            text_rect.topleft = (self.env_render_shape[0] + 10, 25 + i * 35)
+            self.window.blit(text, text_rect)
+        
+        action_text = f"Action: {self.action_meanings[self.action]}"
+        text = self.font.render(action_text, True, "white", None) # Display the raw selected action.
+        text_rect = text.get_rect()
+        text_rect.topleft = (self.env_render_shape[0] + 10, 25 + 10 * 35)  # Place it at the bottom.
+        self.window.blit(text, text_rect)
+
+
+    def _render_logic_rules(self):
+        '''
+        Render logic action rules and highlight the selected rule.
+        '''
+        anchor = (self.env_render_shape[0] + 10, 25)
+        logic_action_rules = get_program_nsfr(self.model.logic_actor)
+
+        title = self.font.render("Logic Action Rules", True, "white", None)
+        title_rect = title.get_rect()
+        title_rect.topleft = (self.env_render_shape[0] + 10, 25)
+        self.window.blit(title, title_rect)
+
+        predicate_indices = []
+        action_logic_prob = 0
+
+        action = self.action_meanings[self.action].lower()
+        basic_actions = self.model.actor.env.pred2action.keys()
+        action_indices = self.model.actor.env.pred2action 
+        action_predicates = self.model.actor.env_action_id_to_action_pred_indices # Dictionary of actions and its predicates.
+
+        if action in basic_actions:
+            # If selected action is a basic action, then it has predicates that contributed to its probability distribution.
+            predicate_indices = action_predicates[action_indices[action]]
+            action_logic_prob = self.model.actor.logic_action_probs[0].tolist()[action_indices[action]] # Probability of the selected action given logic probability distribution.
+            
+            # Partly taken from to_action_distribution() in blender_agent.py.
+            indices = th.tensor(action_predicates[action_indices[action]]) # Indices of the predicates of selected action.
+            indices = indices.expand(self.model.actor.batch_size, -1)
+            indices = indices.to(self.model.actor.device)
+            gathered = th.gather(th.logit(self.model.actor.raw_action_probs, eps=0.01), 1, indices)
+
+            predicate_probs = th.softmax(gathered, dim=1).cpu().detach().numpy()[0] # Normalized probabilities of the predicates of selected action that they have assigned to it.
+            pred2prob_dict = {} # Key is index of the predicate and value is the probability that it has assigned to the action.
+            for j in range(len(indices.tolist()[0])):
+                pred2prob_dict[indices.tolist()[0][j]] = predicate_probs[j]
+            #print(action_predicates[action_indices[action]])
+            
+        logic_policy_weight = self.model.actor.w_policy[1].tolist() # Determines how much influence the logic action probabilities have on the overall action probability distribution.
+
+        #print(self.model.actor.logic_action_probs[0].tolist())
+        #print(logic_policy_weight)
+        #print(action_logic_prob * logic_policy_weight)
+        for i, rule in enumerate(logic_action_rules):
+            is_selected = 0
+            if i in predicate_indices and self.model.actor.actor_mode != "neural" and action_logic_prob * logic_policy_weight > 0.1 and pred2prob_dict[i] > 0.1:
+                # Highlight predicates that contributed to the probability of the selected action with their assignment of a probability bigger than 0.1.
+                # Another condition is a large enough weight for the logic policy during its blending with the neural module, as well as logic probability of the action.
+                is_selected = 1
+
+            color = is_selected * CELL_BACKGROUND_HIGHLIGHT + (1 - is_selected) * CELL_BACKGROUND_DEFAULT
+            i += 2
+            # Render cell background
+            pygame.draw.rect(self.window, color, [
+                anchor[0] - 2,
+                anchor[1] - 2 + i * 35,
+                (PREDICATE_PROBS_COL_WIDTH / 1.25  - 12) * is_selected,
+                28
+            ])
+
+            text = self.font.render(rule, True, "white", None)
             text_rect = text.get_rect()
             text_rect.topleft = (self.env_render_shape[0] + 10, 25 + i * 35)
             self.window.blit(text, text_rect)

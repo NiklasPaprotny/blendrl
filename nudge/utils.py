@@ -80,7 +80,7 @@ def load_model(model_dir,
                env_kwargs_override: dict = None,
                steps = None,
                device=torch.device('cuda:0'),
-               explain=False):
+               explain=True):
     from blendrl.agents.blender_agent import BlenderActorCritic
     # Determine all relevant paths
     model_dir = Path(model_dir)
@@ -126,7 +126,7 @@ def load_model(model_dir,
 
     # Load the model weights
     with open(checkpoint_path, "rb") as f:
-        model.load_state_dict(state_dict=torch.load(f, map_location=torch.device('cpu'), weights_only=True))
+        model.load_state_dict(state_dict=torch.load(f, map_location=torch.device('cpu')))
     # model.logic_actor.im.W = torch.nn.Parameter(model.logic_actor.im.init_identity_weights(device))
     # print(model.logic_actor.im.W)
 
@@ -231,6 +231,23 @@ def print_program_nsfr(actor, mode):
         w = softor(W_softmaxed, dim=0)
         for i, c in enumerate(nsfr.clauses):
             print('C_' + str(i) + ': ', np.round(w[i].detach().cpu().item(), 2), nsfr.clauses[i])
+
+
+def get_program_nsfr(actor, mode="softor"):
+    nsfr = actor
+    program = []
+    if mode == "argmax":
+        C = nsfr.clauses
+        Ws_softmaxed = torch.softmax(nsfr.im.W, 1)
+        for i, W_ in enumerate(Ws_softmaxed):
+            max_i = np.argmax(W_.detach().cpu().numpy())
+            program.append(f"C_{i}: {C[max_i]} W_{i}: {round(W_[max_i].detach().cpu().item(), 3)}")
+    elif mode == "softor":
+        W_softmaxed = torch.softmax(nsfr.im.W, 1)
+        w = softor(W_softmaxed, dim=0)
+        for i, c in enumerate(nsfr.clauses):
+            program.append(f"C_{i}: {np.round(w[i].detach().cpu().item(), 2)} {nsfr.clauses[i]}")
+    return program
             
 
 def print_program_neumann(actor, mode):
