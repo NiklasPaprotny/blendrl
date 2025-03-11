@@ -13,6 +13,7 @@ class DQNWrapper(gym.ObservationWrapper):
 
     # observation() method is being used in the step() methods of gymnasium/core.py. Since they use raw RGB pixel formats, they will need to be adjusted when obs_mode == "dqn".
     def observation(self, obs):
+        self.og_obs = obs
         if self.obs_mode == "dqn":
             new_obs = cv2.resize(obs, (84, 84)) # obs initially has shape (210, 160, 3) due to its RGB format. If obs_mode == "dqn", then it needs to be resized to (84, 84).
             new_obs = cv2.cvtColor(new_obs, cv2.COLOR_RGB2GRAY) # Convert to grayscale, since dqn doesn't use RGB format.
