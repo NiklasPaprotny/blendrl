@@ -449,7 +449,7 @@ class BlenderActorCritic(nn.Module):
         # action = dist.sample()
         action_logprob = dist.log_prob(action)
         action_prob = torch.exp(action_logprob)
-        return action.detach(), action_prob #action_logprob.detach()
+        return action.detach(), action_prob, blending_weights #action_logprob.detach()
 
     def get_prednames(self):
         """
