@@ -30,7 +30,7 @@ def run_through_model(env, model, history, ix, interp_func=None, mask=None, mode
 
     neural_state = neural_state.to(model.device)
 
-    actor_value = model.actor.compute_action_probs_neural(neural_state)[0]
+    actor_value = model.actor.to_neural_action_distribution(neural_state)
     critic_value = model.get_neural_value(neural_state)
 
     return critic_value if mode == 'critic' else actor_value
