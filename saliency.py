@@ -62,3 +62,15 @@ def saliency_on_atari_frame(saliency, atari, fudge_factor, channel=2, sigma=0):
     I[:,:,channel] += S.astype('uint16')
     I = I.clip(1,255).astype('uint8')
     return I
+
+def get_env_meta(env_name):
+    meta = {}
+    if env_name=="Pong-v0":
+        meta['critic_ff'] = 600 ; meta['actor_ff'] = 500
+    elif env_name=="Breakout-v0":
+        meta['critic_ff'] = 600 ; meta['actor_ff'] = 300
+    elif env_name=="SpaceInvaders-v0":
+        meta['critic_ff'] = 400 ; meta['actor_ff'] = 400
+    else:
+        print('environment "{}" not supported'.format(env_name))
+    return meta
