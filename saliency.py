@@ -30,7 +30,7 @@ def run_through_model(env, model, history, ix, interp_func=None, mask=None, mode
 
     neural_state = neural_state.to(model.device)
 
-    actor_value = model.actor.compute_action_probs_neural(neural_state)[0]
+    actor_value = model.actor.to_neural_action_distribution(neural_state)
     critic_value = model.get_neural_value(neural_state)
 
     return critic_value if mode == 'critic' else actor_value
@@ -65,11 +65,11 @@ def saliency_on_atari_frame(saliency, atari, fudge_factor, channel=2, sigma=0):
 
 def get_env_meta(env_name):
     meta = {}
-    if env_name=="seaquest":
+    if env_name=="Pong-v0":
         meta['critic_ff'] = 600 ; meta['actor_ff'] = 500
-    elif env_name=="kangaroo":
+    elif env_name=="Breakout-v0":
         meta['critic_ff'] = 600 ; meta['actor_ff'] = 300
-    elif env_name=="donkeykong":
+    elif env_name=="SpaceInvaders-v0":
         meta['critic_ff'] = 400 ; meta['actor_ff'] = 400
     else:
         print('environment "{}" not supported'.format(env_name))
