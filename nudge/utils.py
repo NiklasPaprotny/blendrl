@@ -7,8 +7,8 @@ from pathlib import Path
 import os
 import re
 
-from ns_policies.blendrl.nudge.agents.logic_agent import NsfrActorCritic
-from ns_policies.blendrl.nudge.agents.neural_agent import ActorCritic
+from nsrl.policies.blendrl.nudge.agents.logic_agent import NsfrActorCritic
+from nsrl.policies.blendrl.nudge.agents.neural_agent import ActorCritic
 from nudge.env import NudgeBaseEnv
 from blendrl.env_vectorized import VectorizedNudgeBaseEnv
 from functools import reduce
